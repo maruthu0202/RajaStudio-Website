@@ -1,0 +1,605 @@
+import React, { useMemo, useState, useEffect } from "react";
+
+// --- Mock Data --------------------------------------------------------------
+const EVENT_CATEGORIES = [
+  { key: "marriage", label: "Marriage" },
+  { key: "birthday", label: "Birthday" },
+  { key: "corporate", label: "Corporate" },
+  { key: "outdoor", label: "Outdoor" },
+  { key: "baby", label: "Baby Shower" },
+];
+
+const SAMPLE_IMAGES = {
+  marriage: [
+    "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1606800052052-a09c7e45a3a6?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1542060748-10c28b62716a?q=80&w=1200&auto=format&fit=crop",
+  ],
+  birthday: [
+    "https://images.unsplash.com/photo-1559526324-593bc073d938?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1587271407850-8d438ca9fdf9?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1603575449299-f3fd36a7b410?q=80&w=1200&auto=format&fit=crop",
+  ],
+  corporate: [
+    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1552581234-26160f608093?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
+  ],
+  outdoor: [
+    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1500534314210-d9dd0a4ba56f?q=80&w=1200&auto=format&fit=crop",
+  ],
+  baby: [
+    "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1500534310780-45817d39b2cc?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1200&auto=format&fit=crop",
+  ],
+};
+
+const ALBUMS = [
+  {
+    id: "alb1",
+    title: "Arun ❤️ Meera — Wedding",
+    cover: SAMPLE_IMAGES.marriage[0],
+    event: "marriage",
+    photos: [...SAMPLE_IMAGES.marriage, ...SAMPLE_IMAGES.marriage],
+    client: "Arun & Meera",
+    date: "2025-02-14",
+  },
+  {
+    id: "alb2",
+    title: "Sanjay — 1st Birthday",
+    cover: SAMPLE_IMAGES.birthday[0],
+    event: "birthday",
+    photos: [...SAMPLE_IMAGES.birthday, ...SAMPLE_IMAGES.birthday],
+    client: "Kavi Family",
+    date: "2025-03-22",
+  },
+  {
+    id: "alb3",
+    title: "TechSpark Offsite",
+    cover: SAMPLE_IMAGES.corporate[0],
+    event: "corporate",
+    photos: [...SAMPLE_IMAGES.corporate, ...SAMPLE_IMAGES.corporate],
+    client: "TechSpark Ltd.",
+    date: "2025-05-10",
+  },
+];
+
+const FRAME_PRODUCTS = [
+  { id: "f1", name: "Classic Black Frame", size: "Small (5x7)", sizeKey: "S", price: 499, img: "https://images.unsplash.com/photo-1508349937151-22b68b72d5d4?q=80&w=1200&auto=format&fit=crop" },
+  { id: "f2", name: "Walnut Wood Frame", size: "Medium (8x10)", sizeKey: "M", price: 899, img: "https://images.unsplash.com/photo-1467043153537-a4f5252e3fc9?q=80&w=1200&auto=format&fit=crop" },
+  { id: "f3", name: "Gold Metal Frame", size: "Large (12x16)", sizeKey: "L", price: 1499, img: "https://images.unsplash.com/photo-1528756514091-dee5ecaa3278?q=80&w=1200&auto=format&fit=crop" },
+  { id: "f4", name: "Floating Acrylic Frame", size: "Large (16x20)", sizeKey: "L", price: 1999, img: "https://images.unsplash.com/photo-1523419409543-a6b0417cd98f?q=80&w=1200&auto=format&fit=crop" },
+  { id: "f5", name: "Rustic Barnwood Frame", size: "Medium (10x12)", sizeKey: "M", price: 1199, img: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop" },
+  { id: "f6", name: "Minimal White Frame", size: "Small (6x8)", sizeKey: "S", price: 549, img: "https://images.unsplash.com/photo-1496302662116-35cc4f36df92?q=80&w=1200&auto=format&fit=crop" },
+];
+
+// --- Helpers ----------------------------------------------------------------
+function classNames(...x) {
+  return x.filter(Boolean).join(" ");
+}
+
+function Section({ id, children, className }) {
+  return (
+    <section id={id} className={classNames("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", className)}>
+      {children}
+    </section>
+  );
+}
+
+function Button({ children, onClick, className, type = "button" }) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className={classNames(
+        "px-4 py-2 rounded-2xl shadow-sm border border-neutral-200 hover:shadow-md active:scale-[.99] transition",
+        "bg-black text-white hover:bg-neutral-800",
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Tag({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={classNames(
+        "px-3 py-1.5 rounded-full border text-sm",
+        active ? "bg-black text-white border-black" : "bg-white text-neutral-700 border-neutral-300 hover:border-black"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Lightbox({ open, onClose, images, startIndex = 0 }) {
+  const [idx, setIdx] = useState(startIndex);
+  useEffect(() => {
+    if (open) setIdx(startIndex);
+  }, [open, startIndex]);
+
+  if (!open) return null;
+  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length);
+  const next = () => setIdx((i) => (i + 1) % images.length);
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+      <button aria-label="close" onClick={onClose} className="absolute top-5 right-5 text-white text-2xl">✕</button>
+      <div className="max-w-5xl w-full px-4">
+        <img src={images[idx]} alt="preview" className="w-full max-h-[80vh] object-contain rounded-xl" />
+        <div className="mt-4 flex items-center justify-between">
+          <Button onClick={prev} className="bg-white text-black border-white">Prev</Button>
+          <span className="text-white/80">{idx + 1} / {images.length}</span>
+          <Button onClick={next} className="bg-white text-black border-white">Next</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Cart Hook ---------------------------------------------------------------
+function useCart() {
+  const [items, setItems] = useState([]); // {id, name, price, qty, img}
+  const add = (product) => {
+    setItems((cur) => {
+      const found = cur.find((i) => i.id === product.id);
+      if (found) return cur.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+      return [...cur, { id: product.id, name: product.name, price: product.price, qty: 1, img: product.img }];
+    });
+  };
+  const remove = (id) => setItems((cur) => cur.filter((i) => i.id !== id));
+  const inc = (id) => setItems((cur) => cur.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i)));
+  const dec = (id) => setItems((cur) => cur.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty - 1) } : i)));
+  const total = useMemo(() => items.reduce((s, i) => s + i.price * i.qty, 0), [items]);
+  return { items, add, remove, inc, dec, total };
+}
+
+// --- App --------------------------------------------------------------------
+export default function App() {
+  const [route, setRoute] = useState("home");
+  const [albumView, setAlbumView] = useState(null); // album id
+  const [lightbox, setLightbox] = useState({ open: false, images: [], start: 0 });
+  const [eventFilter, setEventFilter] = useState("all");
+  const [sizeFilter, setSizeFilter] = useState("ALL");
+  const cart = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = `Raja Studio — ${route[0].toUpperCase() + route.slice(1)}`;
+  }, [route]);
+
+  const allGallery = useMemo(() => {
+    const entries = Object.entries(SAMPLE_IMAGES).flatMap(([k, arr]) => arr.map((url) => ({ url, event: k })));
+    return eventFilter === "all" ? entries : entries.filter((e) => e.event === eventFilter);
+  }, [eventFilter]);
+
+  // Header & Nav
+  const NavLink = ({ to, label }) => (
+    <button
+      onClick={() => setRoute(to)}
+      className={classNames(
+        "px-3 py-2 rounded-xl text-sm font-medium",
+        route === to ? "bg-black text-white" : "hover:bg-neutral-100"
+      )}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="min-h-screen bg-white text-neutral-900">
+      {/* Top Bar */}
+      <header className="sticky top-0 z-40 backdrop-blur bg-white/70 border-b">
+        <Section className="py-3 flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white grid place-items-center text-lg font-bold">R</div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Raja Studio</h1>
+              <p className="text-xs text-neutral-500">Weddings • Events • Portraits</p>
+            </div>
+          </div>
+          <nav className="ml-auto flex flex-wrap items-center gap-2">
+            <NavLink to="home" label="Home" />
+            <NavLink to="events" label="Events" />
+            <NavLink to="gallery" label="Gallery" />
+            <NavLink to="albums" label="Albums" />
+            <NavLink to="frames" label="Frames Shop" />
+            <NavLink to="contact" label="Contact" />
+            <button onClick={() => setCartOpen(true)} className="relative ml-2 px-3 py-2 rounded-xl border hover:bg-neutral-50">
+              🛒 <span className="ml-1 text-sm">Cart</span>
+              {cart.items.length > 0 && (
+                <span className="absolute -top-2 -right-2 text-xs bg-black text-white rounded-full w-6 h-6 grid place-items-center">
+                  {cart.items.reduce((s, i) => s + i.qty, 0)}
+                </span>
+              )}
+            </button>
+          </nav>
+        </Section>
+      </header>
+
+      {/* Routes */}
+      {route === "home" && <Home onExplore={() => setRoute("events")} />}
+      {route === "events" && (
+        <Events
+          onOpenLightbox={(images, start) => setLightbox({ open: true, images, start })}
+        />
+      )}
+      {route === "gallery" && (
+        <Gallery
+          eventFilter={eventFilter}
+          setEventFilter={setEventFilter}
+          items={allGallery}
+          onOpenLightbox={(images, start) => setLightbox({ open: true, images, start })}
+        />
+      )}
+      {route === "albums" && (
+        <Albums
+          albums={ALBUMS}
+          openAlbum={(id) => setAlbumView(id)}
+          onOpenLightbox={(images, start) => setLightbox({ open: true, images, start })}
+          albumView={albumView}
+          closeAlbum={() => setAlbumView(null)}
+        />
+      )}
+      {route === "frames" && (
+        <FramesShop
+          products={FRAME_PRODUCTS}
+          sizeFilter={sizeFilter}
+          setSizeFilter={setSizeFilter}
+          addToCart={cart.add}
+        />
+      )}
+      {route === "contact" && <Contact />}
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Lightbox */}
+      <Lightbox
+        open={lightbox.open}
+        onClose={() => setLightbox((s) => ({ ...s, open: false }))}
+        images={lightbox.images}
+        startIndex={lightbox.start}
+      />
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} />
+    </div>
+  );
+}
+
+// --- Sections ---------------------------------------------------------------
+function Home({ onExplore }) {
+  return (
+    <>
+      <div className="relative">
+        <img
+          src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=2000&auto=format&fit=crop"
+          alt="hero"
+          className="w-full h-[64vh] object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
+        <div className="absolute inset-0 flex items-center">
+          <Section className="text-white">
+            <h2 className="text-3xl sm:text-5xl font-extrabold max-w-3xl leading-tight">
+              Timeless stories, beautifully captured.
+            </h2>
+            <p className="mt-4 max-w-xl text-white/80">
+              Premium photography for weddings, events, and portraits. Explore our galleries and shop elegant photo frames.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <Button onClick={onExplore}>Explore Events</Button>
+              <a href="#contact" className="px-4 py-2 rounded-2xl border border-white/70 text-white hover:bg-white hover:text-black transition">Book a Session</a>
+            </div>
+          </Section>
+        </div>
+      </div>
+      <Section className="py-12 grid sm:grid-cols-3 gap-6">
+        {EVENT_CATEGORIES.slice(0, 3).map((c) => (
+          <div key={c.key} className="rounded-3xl overflow-hidden border hover:shadow-lg transition">
+            <img src={SAMPLE_IMAGES[c.key][0]} alt={c.label} className="h-48 w-full object-cover" />
+            <div className="p-5">
+              <h3 className="font-semibold text-lg">{c.label}</h3>
+              <p className="text-sm text-neutral-600">Memories from {c.label.toLowerCase()} celebrations.</p>
+            </div>
+          </div>
+        ))}
+      </Section>
+    </>
+  );
+}
+
+function Events({ onOpenLightbox }) {
+  return (
+    <Section className="py-10">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Events — Category-wise Galleries</h2>
+      </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {EVENT_CATEGORIES.map((cat) => (
+          <div key={cat.key} className="rounded-3xl border overflow-hidden group">
+            <div className="relative">
+              <img src={SAMPLE_IMAGES[cat.key][0]} alt={cat.label} className="h-56 w-full object-cover group-hover:scale-[1.02] transition" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
+            </div>
+            <div className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">{cat.label}</h3>
+                  <p className="text-sm text-neutral-600">{SAMPLE_IMAGES[cat.key].length} featured photos</p>
+                </div>
+                <Button
+                  className="bg-white text-black border"
+                  onClick={() => onOpenLightbox(SAMPLE_IMAGES[cat.key], 0)}
+                >
+                  View
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Gallery({ eventFilter, setEventFilter, items, onOpenLightbox }) {
+  return (
+    <Section className="py-10">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h2 className="text-2xl font-bold">All Photos — Filter by Event</h2>
+        <div className="flex gap-2">
+          <Tag active={eventFilter === "all"} onClick={() => setEventFilter("all")}>All</Tag>
+          {EVENT_CATEGORIES.map((c) => (
+            <Tag key={c.key} active={eventFilter === c.key} onClick={() => setEventFilter(c.key)}>
+              {c.label}
+            </Tag>
+          ))}
+        </div>
+      </div>
+      <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+        {items.map((g, i) => (
+          <img
+            key={g.url + i}
+            src={g.url}
+            alt={g.event}
+            className="w-full rounded-2xl cursor-pointer hover:opacity-90"
+            onClick={() => onOpenLightbox(items.map((x) => x.url), i)}
+          />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Albums({ albums, openAlbum, albumView, closeAlbum, onOpenLightbox }) {
+  if (albumView) {
+    const album = albums.find((a) => a.id === albumView);
+    return (
+      <Section className="py-10">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">{album.title}</h2>
+            <p className="text-sm text-neutral-600">Client: {album.client} • {new Date(album.date).toDateString()}</p>
+          </div>
+          <Button className="bg-white text-black border" onClick={closeAlbum}>Back to Albums</Button>
+        </div>
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+          {album.photos.map((p, idx) => (
+            <img key={p + idx} src={p} alt="album" className="rounded-2xl cursor-pointer" onClick={() => onOpenLightbox(album.photos, idx)} />
+          ))}
+        </div>
+      </Section>
+    );
+  }
+
+  return (
+    <Section className="py-10">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Client Albums</h2>
+      </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {albums.map((a) => (
+          <div key={a.id} className="rounded-3xl overflow-hidden border hover:shadow-lg transition">
+            <img src={a.cover} alt={a.title} className="h-56 w-full object-cover" />
+            <div className="p-5">
+              <h3 className="font-semibold">{a.title}</h3>
+              <p className="text-sm text-neutral-600">{a.client} • {new Date(a.date).toLocaleDateString()}</p>
+              <div className="mt-4 flex gap-2">
+                <Button onClick={() => openAlbum(a.id)}>Open Album</Button>
+                <Button className="bg-white text-black border" onClick={() => onOpenLightbox(a.photos, 0)}>Quick View</Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function FramesShop({ products, sizeFilter, setSizeFilter, addToCart }) {
+  const sizes = ["ALL", "S", "M", "L"];
+  const filtered = sizeFilter === "ALL" ? products : products.filter((p) => p.sizeKey === sizeFilter);
+
+  return (
+    <Section className="py-10">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Photo Frames — Shop by Size</h2>
+          <p className="text-sm text-neutral-600">Sizes: S (5x7/6x8), M (8x10/10x12), L (12x16/16x20)</p>
+        </div>
+        <div className="flex gap-2">
+          {sizes.map((s) => (
+            <Tag key={s} active={sizeFilter === s} onClick={() => setSizeFilter(s)}>
+              {s}
+            </Tag>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filtered.map((p) => (
+          <div key={p.id} className="rounded-3xl border overflow-hidden hover:shadow-lg transition flex flex-col">
+            <img src={p.img} alt={p.name} className="h-64 w-full object-cover" />
+            <div className="p-5 flex-1 flex flex-col">
+              <h3 className="font-semibold text-lg">{p.name}</h3>
+              <p className="text-sm text-neutral-600 mt-1">Size: {p.size}</p>
+              <div className="mt-auto flex items-center justify-between">
+                <div className="text-lg font-semibold">₹{p.price.toLocaleString()}</div>
+                <Button onClick={() => addToCart(p)}>Add to Cart</Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Contact() {
+  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [sent, setSent] = useState(false);
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const submit = (e) => {
+    e.preventDefault();
+    setSent(true);
+  };
+  return (
+    <Section id="contact" className="py-10">
+      <h2 className="text-2xl font-bold mb-6">Contact Us</h2>
+      <div className="grid md:grid-cols-2 gap-8">
+        <form onSubmit={submit} className="space-y-4">
+          <input className="w-full border rounded-xl p-3" name="name" placeholder="Full Name" value={form.name} onChange={onChange} required />
+          <input className="w-full border rounded-xl p-3" type="email" name="email" placeholder="Email" value={form.email} onChange={onChange} required />
+          <input className="w-full border rounded-xl p-3" name="phone" placeholder="Phone" value={form.phone} onChange={onChange} />
+          <textarea className="w-full border rounded-xl p-3" rows={5} name="message" placeholder="Tell us about your event..." value={form.message} onChange={onChange} />
+          <Button type="submit">Send Message</Button>
+          {sent && <p className="text-green-600">Thanks! We'll get back to you shortly.</p>}
+        </form>
+        <div className="rounded-3xl border overflow-hidden">
+          <iframe
+            title="Raja Studio Map"
+            className="w-full h-80"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.050036968473!2d80.199!3d12.966!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sRaja%20Studio!5e0!3m2!1sen!2sin!4v1610000000000"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          <div className="p-5">
+            <h3 className="font-semibold">Raja Studio</h3>
+            <p className="text-sm text-neutral-600">123, Main Street, Your City, Tamil Nadu 600000</p>
+            <p className="text-sm text-neutral-600">Phone: +91 98765 43210 • Email: hello@rajastudio.in</p>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="mt-16 border-t">
+      <Section className="py-8 grid md:grid-cols-4 gap-8 text-sm">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-black text-white grid place-items-center text-base font-bold">R</div>
+            <span className="font-semibold">Raja Studio</span>
+          </div>
+          <p className="mt-3 text-neutral-600">We craft cinematic stories and elegant portraits for your most important moments.</p>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-2">Quick Links</h4>
+          <ul className="space-y-1 text-neutral-700">
+            <li><a href="#" className="hover:underline">Home</a></li>
+            <li><a href="#" className="hover:underline">Events</a></li>
+            <li><a href="#" className="hover:underline">Albums</a></li>
+            <li><a href="#" className="hover:underline">Frames Shop</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-2">Contact</h4>
+          <ul className="space-y-1 text-neutral-700">
+            <li>+91 98765 43210</li>
+            <li>hello@rajastudio.in</li>
+            <li>Chennai, Tamil Nadu</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-2">Social</h4>
+          <div className="flex gap-2">
+            <a className="px-3 py-1.5 rounded-full border hover:bg-neutral-50" href="#">Instagram</a>
+            <a className="px-3 py-1.5 rounded-full border hover:bg-neutral-50" href="#">Facebook</a>
+            <a className="px-3 py-1.5 rounded-full border hover:bg-neutral-50" href="#">YouTube</a>
+            <a className="px-3 py-1.5 rounded-full border hover:bg-neutral-50" href="#">WhatsApp</a>
+          </div>
+        </div>
+      </Section>
+      <div className="text-center text-xs text-neutral-500 pb-6">© {new Date().getFullYear()} Raja Studio. All rights reserved.</div>
+    </footer>
+  );
+}
+
+function CartDrawer({ open, onClose, cart }) {
+  return (
+    <div className={classNames(
+      "fixed inset-0 z-50 transition",
+      open ? "pointer-events-auto" : "pointer-events-none"
+    )}>
+      <div
+        className={classNames(
+          "absolute inset-0 bg-black/40 transition-opacity",
+          open ? "opacity-100" : "opacity-0"
+        )}
+        onClick={onClose}
+      />
+      <div
+        className={classNames(
+          "absolute right-0 top-0 h-full w-full sm:w-[380px] bg-white shadow-2xl border-l transition-transform",
+          open ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        <div className="p-5 flex items-center justify-between border-b">
+          <h3 className="text-lg font-semibold">Your Cart</h3>
+          <button onClick={onClose} className="text-2xl">✕</button>
+        </div>
+        <div className="p-5 space-y-4 max-h-[65vh] overflow-auto">
+          {cart.items.length === 0 && <p className="text-sm text-neutral-600">Your cart is empty.</p>}
+          {cart.items.map((i) => (
+            <div key={i.id} className="flex gap-3 items-center border rounded-2xl p-3">
+              <img src={i.img} alt={i.name} className="w-16 h-16 object-cover rounded-xl" />
+              <div className="flex-1">
+                <div className="font-medium leading-tight">{i.name}</div>
+                <div className="text-xs text-neutral-600">₹{i.price.toLocaleString()}</div>
+                <div className="mt-2 flex items-center gap-2">
+                  <button className="px-2 py-1 rounded border" onClick={() => cart.dec(i.id)}>-</button>
+                  <span>{i.qty}</span>
+                  <button className="px-2 py-1 rounded border" onClick={() => cart.inc(i.id)}>+</button>
+                </div>
+              </div>
+              <button className="text-neutral-500 hover:text-black" onClick={() => cart.remove(i.id)}>Remove</button>
+            </div>
+          ))}
+        </div>
+        <div className="p-5 border-t mt-auto">
+          <div className="flex items-center justify-between font-semibold">
+            <span>Total</span>
+            <span>₹{cart.total.toLocaleString()}</span>
+          </div>
+          <Button className="w-full mt-4">Checkout</Button>
+          <p className="text-xs text-neutral-500 mt-2">Demo checkout only. Integrate Razorpay/Stripe for payments.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
