@@ -1,0 +1,19 @@
+{
+  "name": "raja-studio-component",
+  "version": "1.0.0",
+  "description": "Photography portfolio React component",
+  "main": "RajaStudio.jsx",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "keywords": [
+    "react",
+    "photography",
+    "portfolio",
+    "tailwind",
+    "component"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
